@@ -59,16 +59,31 @@ const prompt = ai.definePrompt({
   - For principals, provide summaries of daily events and information needed.
 
   Here's the user's information:
-  Role: {{{userRole}}}
-  User ID: {{{userId}}}
-  User Name: {{{userName}}}
-  {{~#if parentName}}Parent Name: {{{parentName}}}{{/if}}
-  {{~#if childName}}Child Name: {{{childName}}}{{/if}}
-  {{~#if attendanceRecords}}Attendance Records:{{#each attendanceRecords}} Date: {{{date}}}, Status: {{{status}}}{{/each}}{{/if}}
-  {{~#if childAttendanceRecords}}Child Attendance Records:{{#each childAttendanceRecords}} Date: {{{date}}}, Status: {{{status}}}{{/each}}{{/if}}
-  {{~#if feePaymentStatus}}Fee Payment Status: {{{feePaymentStatus}}}{{/if}}
-  {{~#if childFeePaymentStatus}}Child Fee Payment Status: {{{childFeePaymentStatus}}}{{/if}}
-  {{~#if generalAnnouncements}}General Announcements:{{#each generalAnnouncements}}} {{{this}}}{{/each}}{{/if}}
+  Role: {{userRole}}
+  User ID: {{userId}}
+  User Name: {{userName}}
+  {{#if parentName}}Parent Name: {{parentName}}{{/if}}
+  {{#if childName}}Child Name: {{childName}}{{/if}}
+  {{#if attendanceRecords~}}
+  Attendance Records:
+  {{#each attendanceRecords}}
+  - Date: {{date}}, Status: {{status}}
+  {{/each}}
+  {{~/if}}
+  {{#if childAttendanceRecords~}}
+  Child's Attendance Records:
+  {{#each childAttendanceRecords}}
+  - Date: {{date}}, Status: {{status}}
+  {{/each}}
+  {{~/if}}
+  {{#if feePaymentStatus}}Fee Payment Status: {{feePaymentStatus}}{{/if}}
+  {{#if childFeePaymentStatus}}Child's Fee Payment Status: {{childFeePaymentStatus}}{{/if}}
+  {{#if generalAnnouncements~}}
+  General Announcements:
+  {{#each generalAnnouncements}}
+  - {{this}}
+  {{/each}}
+  {{~/if}}
 
   Generate a concise and relevant notification message. Choose the most appropriate channel (SMS, Email, or WhatsApp) based on the notification type.
   `,

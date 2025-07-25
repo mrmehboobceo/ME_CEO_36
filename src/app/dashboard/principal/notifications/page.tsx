@@ -33,9 +33,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/dashboard/shared/page-header';
 import type { PersonalizedNotificationInput, PersonalizedNotificationOutput } from '@/ai/flows/personalized-notifications';
 import { generatePersonalizedNotification } from '@/ai/flows/personalized-notifications';
-import { getStudents, getTeachers, getParents, getStudentById } from '@/lib/data';
+import { getStudents, getTeachers, getParents, getStudentById, getAttendanceForStudent, getFeesForStudent } from '@/lib/data';
 import { notificationSchema } from '@/lib/schemas';
 import { Loader2, Wand2, MessageSquare } from 'lucide-react';
+import type { AttendanceRecord, FeePayment } from '@/types';
 
 type UserOption = { value: string; label: string; role: 'Student' | 'Teacher' | 'Parent' };
 
@@ -49,6 +50,7 @@ export default function NotificationsPage() {
     resolver: zodResolver(notificationSchema),
     defaultValues: {
       userRole: 'Parent',
+      userId: '',
     },
   });
 
@@ -80,29 +82,46 @@ export default function NotificationsPage() {
         return;
     }
 
-    let student;
-    if (data.userRole === 'Parent') {
-        const parent = getParents(currentUser.schoolCode).find(p => p.id === data.userId);
-        if (parent?.childIds.length) {
-            student = getStudentById(currentUser.schoolCode, parent.childIds[0]);
-        }
-    } else if(data.userRole === 'Student') {
-        student = getStudentById(currentUser.schoolCode, data.userId);
-    }
-    
     const userName = userOptions.find(u => u.value === data.userId)?.label || '';
-    
+
     const input: PersonalizedNotificationInput = {
       userRole: data.userRole,
       userId: data.userId,
       userName: userName,
       generalAnnouncements: ["The school will be closed for the summer festival next Friday."],
-      ...(student && { 
-          childName: student.name,
-          childAttendanceRecords: [{ date: '2024-07-28', status: 'Absent' }],
-          childFeePaymentStatus: 'Unpaid'
-      })
     };
+
+    let student;
+    if (data.userRole === 'Parent') {
+        const parent = getParents(currentUser.schoolCode).find(p => p.id === data.userId);
+        if (parent?.childIds.length) {
+            student = getStudentById(currentUser.schoolCode, parent.childIds[0]);
+            if(student) {
+                const attendance = getAttendanceForStudent(currentUser.schoolCode, student.id);
+                const fees = getFeesForStudent(currentUser.schoolCode, student.id);
+                const lastFee = fees[fees.length - 1];
+
+                input.childName = student.name;
+                input.childAttendanceRecords = attendance.slice(-5).map(a => ({date: a.date, status: a.status})); // last 5 records
+                if (lastFee) {
+                    input.childFeePaymentStatus = lastFee.status;
+                }
+            }
+        }
+    } else if(data.userRole === 'Student') {
+        student = getStudentById(currentUser.schoolCode, data.userId);
+         if(student) {
+            const attendance = getAttendanceForStudent(currentUser.schoolCode, student.id);
+            const fees = getFeesForStudent(currentUser.schoolCode, student.id);
+            const lastFee = fees[fees.length - 1];
+
+            input.attendanceRecords = attendance.slice(-5).map(a => ({date: a.date, status: a.status}));
+            if (lastFee) {
+                input.feePaymentStatus = lastFee.status;
+            }
+        }
+    }
+    
 
     try {
       const result = await generatePersonalizedNotification(input);
@@ -125,8 +144,15 @@ export default function NotificationsPage() {
 
   const sendNotification = () => {
     if (generatedNotification) {
+      // This is a simulation. In a real app, you'd use a service to send the message.
       const phone = '1234567890'; // Mock phone number
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(generatedNotification.message)}`);
+      if (generatedNotification.channel === 'WhatsApp') {
+         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(generatedNotification.message)}`);
+      } else if (generatedNotification.channel === 'SMS') {
+         window.open(`sms:${phone}?body=${encodeURIComponent(generatedNotification.message)}`);
+      } else {
+        toast({ title: 'Simulated Email', description: `An email has been "sent" with the message:\n\n${generatedNotification.message}`});
+      }
     }
   };
 
@@ -153,7 +179,7 @@ export default function NotificationsPage() {
                       <FormLabel>Recipient Role</FormLabel>
                       <Select onValueChange={(value) => {
                           field.onChange(value);
-                          form.resetField('userId');
+                          form.setValue('userId', '');
                       }} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
@@ -174,7 +200,7 @@ export default function NotificationsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Recipient</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedRole}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedRole}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select a recipient" /></SelectTrigger>
                         </FormControl>

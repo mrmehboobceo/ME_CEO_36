@@ -133,3 +133,121 @@ export const getDailyAttendancePercentage = (schoolCode: string): number => {
     if (todayAttendance.length === 0) return 0; // Or handle as "not marked yet"
     return Math.round((presentCount / todayAttendance.length) * 100);
 }
+
+
+// --- Data Manipulation Functions ---
+
+// Generate a unique ID for a new student
+const generateStudentId = (schoolCode: string) => {
+    const students = getStudents(schoolCode);
+    const lastId = students.reduce((max, s) => {
+        const idNum = parseInt(s.id.replace('S', ''), 10);
+        return idNum > max ? idNum : max;
+    }, 0);
+    return `S${(lastId + 1).toString().padStart(3, '0')}`;
+};
+
+export const addStudent = (schoolCode: string, studentData: Omit<Student, 'id' | 'role' | 'schoolCode'>, existingId?: string): boolean => {
+    try {
+        const users: User[] = safeLocalStorageGet('users') || [];
+        const studentId = existingId || generateStudentId(schoolCode);
+
+        if (existingId) { // Update
+            const studentIndex = users.findIndex(u => u.id === existingId && u.schoolCode === schoolCode && u.role === 'Student');
+            if (studentIndex === -1) return false;
+            const existingStudent = users[studentIndex] as Student;
+            users[studentIndex] = { ...existingStudent, ...studentData, password: existingStudent.password }; // Keep original password if not updated
+        } else { // Add new
+            const newStudent: Student = {
+                id: studentId,
+                role: 'Student',
+                schoolCode,
+                password: 'password', // Default password
+                ...studentData,
+            };
+            users.push(newStudent);
+        }
+        
+        safeLocalStorageSet('users', users);
+        return true;
+    } catch (e) {
+        console.error("Failed to add or update student", e);
+        return false;
+    }
+};
+
+
+export const deleteStudent = (schoolCode: string, studentId: string): boolean => {
+    try {
+        let users: User[] = safeLocalStorageGet('users') || [];
+        const initialLength = users.length;
+        users = users.filter(u => !(u.id === studentId && u.schoolCode === schoolCode && u.role === 'Student'));
+        if (users.length < initialLength) {
+            safeLocalStorageSet('users', users);
+            // Optionally, also remove related data like attendance, fees, etc.
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error("Failed to delete student", e);
+        return false;
+    }
+};
+
+// Generate a unique ID for a new teacher
+const generateTeacherId = (schoolCode: string) => {
+    const teachers = getTeachers(schoolCode);
+    const lastId = teachers.reduce((max, t) => {
+        const idNum = parseInt(t.id.replace('T', ''), 10);
+        return idNum > max ? idNum : max;
+    }, 0);
+    return `T${(lastId + 1).toString().padStart(3, '0')}`;
+};
+
+
+export const addTeacher = (schoolCode: string, teacherData: { name: string, email: string, password?: string, assignedClass?: string }, existingId?: string): boolean => {
+    try {
+        const users: User[] = safeLocalStorageGet('users') || [];
+        const teacherId = existingId || teacherData.email;
+
+        if (existingId) { // Update
+            const teacherIndex = users.findIndex(u => u.id === existingId && u.schoolCode === schoolCode && u.role === 'Teacher');
+            if (teacherIndex === -1) return false;
+            const existingTeacher = users[teacherIndex] as Teacher;
+            users[teacherIndex] = { ...existingTeacher, name: teacherData.name, assignedClass: teacherData.assignedClass, password: teacherData.password === '******' ? existingTeacher.password : teacherData.password };
+        } else { // Add new
+            if (users.some(u => u.id === teacherId && u.schoolCode === schoolCode)) return false; // ID already exists
+            const newTeacher: Teacher = {
+                id: teacherId,
+                role: 'Teacher',
+                schoolCode,
+                name: teacherData.name,
+                password: teacherData.password || 'password',
+                assignedClass: teacherData.assignedClass,
+            };
+            users.push(newTeacher);
+        }
+        
+        safeLocalStorageSet('users', users);
+        return true;
+    } catch (e) {
+        console.error("Failed to add or update teacher", e);
+        return false;
+    }
+};
+
+export const deleteTeacher = (schoolCode: string, teacherId: string): boolean => {
+     try {
+        let users: User[] = safeLocalStorageGet('users') || [];
+        const initialLength = users.length;
+        users = users.filter(u => !(u.id === teacherId && u.schoolCode === schoolCode && u.role === 'Teacher'));
+        if (users.length < initialLength) {
+            safeLocalStorageSet('users', users);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error("Failed to delete teacher", e);
+        return false;
+    }
+}

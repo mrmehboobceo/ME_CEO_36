@@ -8,8 +8,10 @@ import {
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { useAuth } from "@/hooks/useAuth";
 import { getStudents, getTeachers, getDailyAttendancePercentage } from "@/lib/data";
-import { Users, UserCheck, Percent, Bell } from "lucide-react";
+import { Users, UserCheck, Percent, Bell, ArrowRight, UserPlus, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function PrincipalDashboardPage() {
   const { currentUser } = useAuth();
@@ -98,8 +100,28 @@ export default function PrincipalDashboardPage() {
             <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent>
-                <p>More dashboard content and quick actions can be added here.</p>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+               <Link href="/dashboard/principal/students" passHref>
+                  <Button variant="outline" className="w-full justify-start h-12">
+                     <Users className="mr-2" />
+                     Manage Students
+                     <ArrowRight className="ml-auto h-4 w-4" />
+                  </Button>
+               </Link>
+               <Link href="/dashboard/principal/teachers" passHref>
+                  <Button variant="outline" className="w-full justify-start h-12">
+                     <UserCheck className="mr-2" />
+                     Manage Teachers
+                     <ArrowRight className="ml-auto h-4 w-4" />
+                  </Button>
+               </Link>
+               <Link href="/dashboard/principal/notifications" passHref>
+                  <Button variant="outline" className="w-full justify-start h-12">
+                     <Bell className="mr-2" />
+                     Send Notifications
+                     <ArrowRight className="ml-auto h-4 w-4" />
+                  </Button>
+               </Link>
             </CardContent>
         </Card>
       </div>

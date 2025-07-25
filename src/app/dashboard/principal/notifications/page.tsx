@@ -54,6 +54,8 @@ export default function NotificationsPage() {
     },
   });
 
+  const displayForm = useForm();
+
   const selectedRole = useWatch({ control: form.control, name: 'userRole' });
 
   const getUsersForRole = (role: 'Principal' | 'Teacher' | 'Student' | 'Parent'): UserOption[] => {
@@ -82,7 +84,14 @@ export default function NotificationsPage() {
         return;
     }
 
-    const userName = userOptions.find(u => u.value === data.userId)?.label || '';
+    const selectedUser = userOptions.find(u => u.value === data.userId);
+    const userName = selectedUser?.label || '';
+    
+    if (!selectedUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a valid user.' });
+        setIsLoading(false);
+        return;
+    }
 
     const input: PersonalizedNotificationInput = {
       userRole: data.userRole,
@@ -234,16 +243,20 @@ export default function NotificationsPage() {
             {isLoading && <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
             {!isLoading && !generatedNotification && <p className="text-muted-foreground text-center">Your generated message will appear here.</p>}
             {generatedNotification && (
-              <div className="space-y-4">
-                <div>
-                    <FormLabel>Channel</FormLabel>
-                    <p className="font-mono text-sm p-2 bg-muted rounded-md">{generatedNotification.channel}</p>
+              <Form {...displayForm}>
+                <div className="space-y-4">
+                  <FormItem>
+                      <FormLabel>Channel</FormLabel>
+                      <p className="font-mono text-sm p-2 bg-muted rounded-md">{generatedNotification.channel}</p>
+                  </FormItem>
+                  <FormItem>
+                      <FormLabel>Message</FormLabel>
+                      <FormControl>
+                        <Textarea value={generatedNotification.message} readOnly rows={5} className="bg-muted"/>
+                      </FormControl>
+                  </FormItem>
                 </div>
-                <div>
-                    <FormLabel>Message</FormLabel>
-                    <Textarea value={generatedNotification.message} readOnly rows={5} className="bg-muted"/>
-                </div>
-              </div>
+              </Form>
             )}
           </CardContent>
           {generatedNotification && (

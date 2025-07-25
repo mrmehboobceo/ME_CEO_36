@@ -20,47 +20,15 @@ const safeLocalStorageSet = (key: string, value: any) => {
 // --- Data Initialization ---
 
 const initializeData = () => {
-    // Check if data is already initialized
-    if (safeLocalStorageGet('schools')) return;
-
-    const school: School = { name: 'Greenwood High', category: 'Private', code: 'GHS101' };
-    
-    const principal: Principal = { id: 'principal@ghs.com', role: 'Principal', password: 'password', name: 'Dr. Evelyn Reed', schoolCode: 'GHS101' };
-    
-    const teachers: Teacher[] = [
-        { id: 'T001', role: 'Teacher', password: 'password', name: 'Mr. Alan Grant', schoolCode: 'GHS101', assignedClass: '10-A' },
-        { id: 'T002', role: 'Teacher', password: 'password', name: 'Ms. Ellie Sattler', schoolCode: 'GHS101', assignedClass: '9-B' },
-    ];
-
-    const parents: Parent[] = [
-        { id: 'P001', role: 'Parent', password: 'password', name: 'Sarah Connor', schoolCode: 'GHS101', childIds: ['S001'] },
-        { id: 'P002', role: 'Parent', password: 'password', name: 'John Hammond', schoolCode: 'GHS101', childIds: ['S002'] },
-    ];
-    
-    const students: Student[] = [
-        { id: 'S001', role: 'Student', password: 'password', name: 'John Connor', schoolCode: 'GHS101', class: '10-A', dob: '2008-02-28', fatherName: 'Unknown', bFormNo: '12345', fatherCnic: '35202-1234567-1', nadraVerified: true, parentId: 'P001' },
-        { id: 'S002', role: 'Student', password: 'password', name: 'Lex Murphy', schoolCode: 'GHS101', class: '9-B', dob: '2009-05-15', fatherName: 'John Hammond', bFormNo: '67890', fatherCnic: '35202-7654321-2', nadraVerified: false, parentId: 'P002' },
-    ];
-    
-    const attendance: AttendanceRecord[] = [
-        { studentId: 'S001', date: '2024-07-28', status: 'Present', markedBy: 'T001' },
-        { studentId: 'S002', date: '2024-07-28', status: 'Absent', markedBy: 'T002' },
-    ];
-
-    const fees: FeePayment[] = [
-        { studentId: 'S001', amount: 5000, dueDate: '2024-08-10', status: 'Paid', paidOn: '2024-07-25' },
-        { studentId: 'S002', amount: 4500, dueDate: '2024-08-10', status: 'Unpaid' },
-    ];
-    
-    const leaves: LeaveRequest[] = [
-        { id: 'L001', studentId: 'S002', studentName: "Lex Murphy", date: '2024-07-29', reason: 'Family event.', status: 'Approved' }
-    ];
-
-    safeLocalStorageSet('schools', [school]);
-    safeLocalStorageSet('users', [principal, ...teachers, ...parents, ...students]);
-    safeLocalStorageSet('attendance', attendance);
-    safeLocalStorageSet('fees', fees);
-    safeLocalStorageSet('leaves', leaves);
+    // This function will no longer seed data by default.
+    // It will be seeded upon first registration.
+    if (safeLocalStorageGet('schools') === null) {
+        safeLocalStorageSet('schools', []);
+        safeLocalStorageSet('users', []);
+        safeLocalStorageSet('attendance', []);
+        safeLocalStorageSet('fees', []);
+        safeLocalStorageSet('leaves', []);
+    }
 };
 
 // Initialize data on first load
@@ -79,7 +47,46 @@ export const registerSchoolAndPrincipal = (data: RegistrationData): boolean => {
     const newPrincipal: Principal = { id: data.principalEmail, name: data.principalName, password: data.password, role: 'Principal', schoolCode: data.schoolCode };
     
     safeLocalStorageSet('schools', [...schools, newSchool]);
-    const users: User[] = safeLocalStorageGet('users') || [];
+    
+    let users: User[] = safeLocalStorageGet('users') || [];
+
+    // Seed data only on the very first registration.
+    if (schools.length === 0) {
+        const teachers: Teacher[] = [
+            { id: 'T001', role: 'Teacher', password: 'password', name: 'Mr. Alan Grant', schoolCode: data.schoolCode, assignedClass: '10-A' },
+            { id: 'T002', role: 'Teacher', password: 'password', name: 'Ms. Ellie Sattler', schoolCode: data.schoolCode, assignedClass: '9-B' },
+        ];
+
+        const parents: Parent[] = [
+            { id: 'P001', role: 'Parent', password: 'password', name: 'Sarah Connor', schoolCode: data.schoolCode, childIds: ['S001'] },
+            { id: 'P002', role: 'Parent', password: 'password', name: 'John Hammond', schoolCode: data.schoolCode, childIds: ['S002'] },
+        ];
+        
+        const students: Student[] = [
+            { id: 'S001', role: 'Student', password: 'password', name: 'John Connor', schoolCode: data.schoolCode, class: '10-A', dob: '2008-02-28', fatherName: 'Unknown', bFormNo: '12345', fatherCnic: '35202-1234567-1', nadraVerified: true, parentId: 'P001' },
+            { id: 'S002', role: 'Student', password: 'password', name: 'Lex Murphy', schoolCode: data.schoolCode, class: '9-B', dob: '2009-05-15', fatherName: 'John Hammond', bFormNo: '67890', fatherCnic: '35202-7654321-2', nadraVerified: false, parentId: 'P002' },
+        ];
+        
+        const attendance: AttendanceRecord[] = [
+            { studentId: 'S001', date: '2024-07-28', status: 'Present', markedBy: 'T001' },
+            { studentId: 'S002', date: '2024-07-28', status: 'Absent', markedBy: 'T002' },
+        ];
+
+        const fees: FeePayment[] = [
+            { studentId: 'S001', amount: 5000, dueDate: '2024-08-10', status: 'Paid', paidOn: '2024-07-25' },
+            { studentId: 'S002', amount: 4500, dueDate: '2024-08-10', status: 'Unpaid' },
+        ];
+        
+        const leaves: LeaveRequest[] = [
+            { id: 'L001', studentId: 'S002', studentName: "Lex Murphy", date: '2024-07-29', reason: 'Family event.', status: 'Approved' }
+        ];
+
+        users = [...users, ...teachers, ...parents, ...students];
+        safeLocalStorageSet('attendance', attendance);
+        safeLocalStorageSet('fees', fees);
+        safeLocalStorageSet('leaves', leaves);
+    }
+    
     safeLocalStorageSet('users', [...users, newPrincipal]);
     return true;
 };

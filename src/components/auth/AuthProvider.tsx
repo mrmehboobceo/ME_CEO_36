@@ -33,7 +33,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleAuthRedirect = useCallback((user: CurrentUser | null) => {
     if (user) {
       const dashboardPath = `/dashboard/${user.role.toLowerCase()}`;
-      if (pathname.startsWith('/dashboard') && pathname !== dashboardPath) {
+      // Allow principals to navigate to any page within their dashboard
+      const isPrincipalOnDashboard = user.role === 'Principal' && pathname.startsWith('/dashboard/principal');
+      
+      if (pathname.startsWith('/dashboard') && pathname !== dashboardPath && !isPrincipalOnDashboard) {
         router.replace(dashboardPath);
       } else if (pathname === '/login' || pathname === '/register') {
         router.replace(dashboardPath);

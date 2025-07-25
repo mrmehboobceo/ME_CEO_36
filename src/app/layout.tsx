@@ -4,7 +4,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'CampusConnect',
+  title: 'SMART_TRACK',
   description: 'Comprehensive School SaaS Software System',
 };
 

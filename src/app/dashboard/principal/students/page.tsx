@@ -31,7 +31,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetClose,
   SheetFooter,
 } from '@/components/ui/sheet';
@@ -45,7 +44,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addStudentSchema } from '@/lib/schemas';
 import type { z } from 'zod';
@@ -64,6 +63,15 @@ export default function StudentsPage() {
   const form = useForm<z.infer<typeof addStudentSchema>>({
     resolver: zodResolver(addStudentSchema),
   });
+  
+  const bFormValue = useWatch({ control: form.control, name: "bFormNo" });
+
+  useEffect(() => {
+    if (!editingStudent && bFormValue) {
+        form.setValue('password', bFormValue);
+    }
+  }, [bFormValue, editingStudent, form]);
+
 
   const fetchStudents = () => {
     if (currentUser) {
@@ -124,6 +132,7 @@ export default function StudentsPage() {
     setEditingStudent(student);
     form.reset({
         ...student,
+        password: student.password || '',
         dob: student.dob,
     });
     setIsSheetOpen(true);
@@ -140,6 +149,7 @@ export default function StudentsPage() {
         fatherCnic: '',
         nadraVerified: false,
         parentId: '',
+        password: '',
     });
     setIsSheetOpen(true);
   }
@@ -228,7 +238,6 @@ export default function StudentsPage() {
           </SheetHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleAddOrUpdateStudent)} className="space-y-4 py-4">
-              {/* Form fields from addStudentSchema */}
               <FormField
                 control={form.control}
                 name="name"
@@ -310,6 +319,17 @@ export default function StudentsPage() {
                     </FormItem>
                     )}
                 />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl><Input type="password" placeholder="Default is B-Form No." {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="nadraVerified"

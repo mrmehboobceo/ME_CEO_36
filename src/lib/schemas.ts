@@ -26,6 +26,7 @@ export const addStudentSchema = z.object({
     nadraVerified: z.boolean().default(false),
     photo: z.any().optional(),
     parentId: z.string().min(1, { message: "Parent ID is required." }),
+    password: z.string().min(4, { message: "Password must be at least 4 characters."}),
 });
 
 export const addTeacherSchema = z.object({

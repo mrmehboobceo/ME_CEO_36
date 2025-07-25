@@ -44,7 +44,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addTeacherSchema } from '@/lib/schemas';
 import type { z } from 'zod';
@@ -61,6 +61,14 @@ export default function TeachersPage() {
   const form = useForm<z.infer<typeof addTeacherSchema>>({
     resolver: zodResolver(addTeacherSchema),
   });
+  
+  const emailValue = useWatch({ control: form.control, name: "email" });
+
+  useEffect(() => {
+    if (!editingTeacher && emailValue) {
+        form.setValue('password', emailValue);
+    }
+  }, [emailValue, editingTeacher, form]);
 
   const fetchTeachers = () => {
     if (currentUser) {
@@ -119,7 +127,7 @@ export default function TeachersPage() {
     form.reset({
         name: teacher.name,
         email: teacher.id,
-        password: teacher.password || '******', // Don't expose password
+        password: teacher.password || '',
         assignedClass: teacher.assignedClass || '',
     });
     setIsSheetOpen(true);
@@ -233,7 +241,7 @@ export default function TeachersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                    <FormControl><Input type="password" placeholder="Default is email" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

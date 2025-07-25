@@ -61,41 +61,13 @@ export const registerSchoolAndPrincipal = (data: RegistrationData): boolean => {
 // Seed initial data for a new school
 const seedInitialData = (schoolCode: string) => {
     let users: User[] = safeLocalStorageGet('users') || [];
+    let schools: School[] = safeLocalStorageGet('schools') || [];
 
-    const teachers: Teacher[] = [
-        { id: 'T001', role: 'Teacher', password: 'password', name: 'Mr. Alan Grant', schoolCode, assignedClass: '10-A' },
-        { id: 'T002', role: 'Teacher', password: 'password', name: 'Ms. Ellie Sattler', schoolCode, assignedClass: '9-B' },
-    ];
-
-    const parents: Parent[] = [
-        { id: 'P001', role: 'Parent', password: 'password', name: 'Sarah Connor', schoolCode, childIds: ['S001'] },
-        { id: 'P002', role: 'Parent', password: 'password', name: 'John Hammond', schoolCode, childIds: ['S002'] },
-    ];
-    
-    const students: Student[] = [
-        { id: 'S001', role: 'Student', password: 'password', name: 'John Connor', schoolCode, class: '10-A', dob: '2008-02-28', fatherName: 'Unknown', bFormNo: '12345', fatherCnic: '35202-1234567-1', nadraVerified: true, parentId: 'P001' },
-        { id: 'S002', role: 'Student', password: 'password', name: 'Lex Murphy', schoolCode, class: '9-B', dob: '2009-05-15', fatherName: 'John Hammond', bFormNo: '67890', fatherCnic: '35202-7654321-2', nadraVerified: false, parentId: 'P002' },
-    ];
-    
-    const attendance: AttendanceRecord[] = [
-        { studentId: 'S001', date: format(new Date(), 'yyyy-MM-dd'), status: 'Present', markedBy: 'T001' },
-        { studentId: 'S002', date: format(new Date(), 'yyyy-MM-dd'), status: 'Absent', markedBy: 'T002' },
-    ];
-
-    const fees: FeePayment[] = [
-        { studentId: 'S001', amount: 5000, dueDate: '2024-08-10', status: 'Paid', paidOn: '2024-07-25' },
-        { studentId: 'S002', amount: 4500, dueDate: '2024-08-10', status: 'Unpaid' },
-    ];
-    
-    const leaves: LeaveRequest[] = [
-        { id: 'L001', studentId: 'S002', studentName: "Lex Murphy", date: '2024-07-29', reason: 'Family event.', status: 'Approved' }
-    ];
-
-    users = [...users, ...teachers, ...parents, ...students];
-    safeLocalStorageSet('users', users);
-    safeLocalStorageSet('attendance', attendance);
-    safeLocalStorageSet('fees', fees);
-    safeLocalStorageSet('leaves', leaves);
+    // Clear existing data for this school code to avoid duplicates if re-seeding
+    users = users.filter(u => u.schoolCode !== schoolCode && u.role !== 'Principal');
+    let attendance = (safeLocalStorageGet('attendance') || []).filter((a: AttendanceRecord) => !getStudents(schoolCode).find(s => s.id === a.studentId));
+    let fees = (safeLocalStorageGet('fees') || []).filter((f: FeePayment) => !getStudents(schoolCode).find(s => s.id === f.studentId));
+    let leaves = (safeLocalStorageGet('leaves') || []).filter((l: LeaveRequest) => !getStudents(schoolCode).find(s => s.id === l.studentId));
 };
 
 
@@ -171,13 +143,12 @@ export const addStudent = (schoolCode: string, studentData: Omit<Student, 'id' |
             const studentIndex = users.findIndex(u => u.id === existingId && u.schoolCode === schoolCode && u.role === 'Student');
             if (studentIndex === -1) return false;
             const existingStudent = users[studentIndex] as Student;
-            users[studentIndex] = { ...existingStudent, ...studentData, password: existingStudent.password }; // Keep original password if not updated
+            users[studentIndex] = { ...existingStudent, ...studentData };
         } else { // Add new
             const newStudent: Student = {
                 id: studentId,
                 role: 'Student',
                 schoolCode,
-                password: 'password', // Default password
                 ...studentData,
             };
             users.push(newStudent);
@@ -218,7 +189,7 @@ export const addTeacher = (schoolCode: string, teacherData: { name: string, emai
             const teacherIndex = users.findIndex(u => u.id === existingId && u.schoolCode === schoolCode && u.role === 'Teacher');
             if (teacherIndex === -1) return false;
             const existingTeacher = users[teacherIndex] as Teacher;
-            users[teacherIndex] = { ...existingTeacher, name: teacherData.name, assignedClass: teacherData.assignedClass, password: teacherData.password === '******' ? existingTeacher.password : teacherData.password };
+            users[teacherIndex] = { ...existingTeacher, name: teacherData.name, assignedClass: teacherData.assignedClass, password: teacherData.password ? teacherData.password : existingTeacher.password };
         } else { // Add new
             if (users.some(u => u.id === teacherId && u.schoolCode === schoolCode)) return false; // ID already exists
             const newTeacher: Teacher = {
@@ -226,7 +197,7 @@ export const addTeacher = (schoolCode: string, teacherData: { name: string, emai
                 role: 'Teacher',
                 schoolCode,
                 name: teacherData.name,
-                password: teacherData.password || 'password',
+                password: teacherData.password,
                 assignedClass: teacherData.assignedClass,
             };
             users.push(newTeacher);

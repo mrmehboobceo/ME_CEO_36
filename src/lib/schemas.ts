@@ -44,5 +44,5 @@ export const leaveRequestSchema = z.object({
 
 export const notificationSchema = z.object({
     userRole: z.enum(['Principal', 'Teacher', 'Student', 'Parent']),
-    userId: z.string(),
+    userId: z.string().min(1, { message: "Please select a recipient." }),
 });

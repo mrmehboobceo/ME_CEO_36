@@ -24,14 +24,14 @@ export const addStudentSchema = z.object({
     bFormNo: z.string().optional(),
     fatherCnic: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, { message: "Invalid CNIC format (e.g., 12345-1234567-1)" }),
     nadraVerified: z.boolean().default(false),
-    photo: z.any().optional(),
+    photoUrl: z.any().optional(),
     parentId: z.string().min(1, { message: "Parent ID is required." }),
     password: z.string().min(4, { message: "Password must be at least 4 characters."}),
 });
 
 export const addTeacherSchema = z.object({
     name: z.string().min(3, { message: "Name must be at least 3 characters." }),
-    email: z.string().email({ message: "Invalid email address." }),
+    id: z.string().email({ message: "Invalid email address." }),
     password: z.string().min(6, { message: "Password must be at least 6 characters." }),
     assignedClass: z.string().optional(),
 });

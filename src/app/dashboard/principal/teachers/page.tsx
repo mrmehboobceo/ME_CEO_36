@@ -62,7 +62,7 @@ export default function TeachersPage() {
     resolver: zodResolver(addTeacherSchema),
   });
   
-  const emailValue = useWatch({ control: form.control, name: "email" });
+  const emailValue = useWatch({ control: form.control, name: "id" });
 
   useEffect(() => {
     if (!editingTeacher && emailValue) {
@@ -83,7 +83,7 @@ export default function TeachersPage() {
   const handleAddOrUpdateTeacher = (values: z.infer<typeof addTeacherSchema>) => {
     if (!currentUser) return;
     
-    const teacherData = { ...values, email: editingTeacher ? editingTeacher.id : values.email };
+    const teacherData: Omit<Teacher, 'role' | 'schoolCode'> = { ...values };
 
     const success = addTeacherToDB(currentUser.schoolCode, teacherData, editingTeacher?.id);
 
@@ -126,7 +126,7 @@ export default function TeachersPage() {
     setEditingTeacher(teacher);
     form.reset({
         name: teacher.name,
-        email: teacher.id,
+        id: teacher.id,
         password: teacher.password || '',
         assignedClass: teacher.assignedClass || '',
     });
@@ -137,7 +137,7 @@ export default function TeachersPage() {
     setEditingTeacher(null);
     form.reset({
         name: '',
-        email: '',
+        id: '',
         password: '',
         assignedClass: '',
     });
@@ -226,7 +226,7 @@ export default function TeachersPage() {
               />
                <FormField
                 control={form.control}
-                name="email"
+                name="id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Teacher ID / Email</FormLabel>

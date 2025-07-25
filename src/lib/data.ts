@@ -180,25 +180,23 @@ export const deleteStudent = (schoolCode: string, studentId: string): boolean =>
     }
 };
 
-export const addTeacher = (schoolCode: string, teacherData: { name: string, email: string, password?: string, assignedClass?: string }, existingId?: string): boolean => {
+export const addTeacher = (schoolCode: string, teacherData: Omit<Teacher, 'id' | 'role' | 'schoolCode'>, existingId?: string): boolean => {
     try {
         const users: User[] = safeLocalStorageGet('users') || [];
-        const teacherId = existingId || teacherData.email;
+        const teacherId = existingId || teacherData.id;
 
         if (existingId) { // Update
             const teacherIndex = users.findIndex(u => u.id === existingId && u.schoolCode === schoolCode && u.role === 'Teacher');
             if (teacherIndex === -1) return false;
             const existingTeacher = users[teacherIndex] as Teacher;
-            users[teacherIndex] = { ...existingTeacher, name: teacherData.name, assignedClass: teacherData.assignedClass, password: teacherData.password ? teacherData.password : existingTeacher.password };
+            users[teacherIndex] = { ...existingTeacher, ...teacherData };
         } else { // Add new
             if (users.some(u => u.id === teacherId && u.schoolCode === schoolCode)) return false; // ID already exists
             const newTeacher: Teacher = {
                 id: teacherId,
                 role: 'Teacher',
                 schoolCode,
-                name: teacherData.name,
-                password: teacherData.password,
-                assignedClass: teacherData.assignedClass,
+                ...teacherData
             };
             users.push(newTeacher);
         }
